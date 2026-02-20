@@ -1,5 +1,5 @@
 .theos
 /obj
-/packages
 /repo
 todo.txt
+.DS_Store

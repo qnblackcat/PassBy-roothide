@@ -69,7 +69,7 @@ static void saveAllGracePeriods()
 {
     NSMutableDictionary * gracePeriods =
         [   [NSMutableDictionary alloc]
-            initWithContentsOfFile:@GP_PLIST_PATH
+            initWithContentsOfFile:@(GP_PLIST_PATH)
         ] ?:[NSMutableDictionary new];
 
     if (useGracePeriod && gracePeriodEnds) {
@@ -123,7 +123,7 @@ static void loadAllGracePeriods()
 {
     NSDictionary * gracePeriods =
         [   [NSDictionary alloc]
-            initWithContentsOfFile:@GP_PLIST_PATH
+            initWithContentsOfFile:@(GP_PLIST_PATH)
         ];
 
     if (gracePeriods) {

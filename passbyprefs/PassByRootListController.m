@@ -1,27 +1,20 @@
 #import  <MessageUI/MessageUI.h>
 #include <notify.h>
+#include <roothide.h>
 #include <objc/runtime.h>
 
 #include "PassByRootListController.h"
 #include "../crypto.h"
 
-#define PLIST_PATH      "/var/mobile/Library/Preferences/com.giorgioiavicoli.passby.plist"
-#define WIFI_PLIST_PATH "/var/mobile/Library/Preferences/com.giorgioiavicoli.passbynets.plist"
-#define BT_PLIST_PATH   "/var/mobile/Library/Preferences/com.giorgioiavicoli.passbybt.plist"
+#define PLIST_PATH      jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passby.plist")
+#define WIFI_PLIST_PATH jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passbynets.plist")
+#define BT_PLIST_PATH   jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passbybt.plist")
 
-void openURL(NSURL * url)
-{
-    if ([UIApplication respondsToSelector:@selector(openURL:options:completionHandler:)]) {
-        [   [UIApplication sharedApplication]
-            openURL:url options:@{} completionHandler:nil
-        ];
-    } else {
-        [   [UIApplication sharedApplication] 
-            openURL:url 
-        ];
-    }
+static inline void openURL(NSURL *url) {
+    if (!url) return;
+    UIApplication *app = [UIApplication sharedApplication];
+    [app openURL:url options:@{} completionHandler:nil];
 }
-
 @implementation PassByRootListController
 
 - (NSArray *)specifiers
@@ -37,7 +30,7 @@ void openURL(NSURL * url)
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     return  (   [   [[NSDictionary alloc]
-                    initWithContentsOfFile:@PLIST_PATH
+                    initWithContentsOfFile:@(PLIST_PATH)
                     ] retain
                 ] [[specifier propertyForKey:@"key"]]
             ) ?:[specifier properties][@"default"];
@@ -54,7 +47,7 @@ void openURL(NSURL * url)
 {
     NSMutableDictionary * settings =
         [   [NSMutableDictionary alloc]
-            initWithContentsOfFile:@PLIST_PATH
+            initWithContentsOfFile:@(PLIST_PATH)
         ] ?:[NSMutableDictionary new];
 
     NSString * key = [specifier propertyForKey:@"key"];
@@ -134,9 +127,9 @@ void openURL(NSURL * url)
 
 -(void)resetSettings:(id)arg1
 {
-    [@{} writeToFile:@PLIST_PATH        atomically:YES];
-    [@{} writeToFile:@WIFI_PLIST_PATH   atomically:YES];
-    [@{} writeToFile:@BT_PLIST_PATH     atomically:YES];
+    [@{} writeToFile:@(PLIST_PATH)        atomically:YES];
+    [@{} writeToFile:@(WIFI_PLIST_PATH)   atomically:YES];
+    [@{} writeToFile:@(WIFI_PLIST_PATH)     atomically:YES];
 	notify_post("com.giorgioiavicoli.passby/reload");
     [self reloadSpecifiers];
 }
@@ -164,7 +157,7 @@ void openURL(NSURL * url)
                 handler:^(UIAlertAction * action)
                 {
                     [mailComposeVC
-                        addAttachmentData:[NSData dataWithContentsOfFile:@PLIST_PATH]
+                        addAttachmentData:[NSData dataWithContentsOfFile:@(PLIST_PATH)]
                         mimeType:@"application/xml"
                         fileName:@"PassBySettings.plist"
                     ];
@@ -227,7 +220,7 @@ NSDictionary * _networksDict;
         NSMutableDictionary* networksDict = [NSMutableDictionary new];
         NSDictionary * networksList =
             [   [NSDictionary alloc]
-                initWithContentsOfFile:@WIFI_PLIST_PATH
+                initWithContentsOfFile:@(WIFI_PLIST_PATH)
             ] ?: [NSDictionary new];
 
         WiFiManagerRef manager = WiFiManagerClientCreate(kCFAllocatorDefault, 0);
@@ -285,14 +278,14 @@ NSDictionary * _networksDict;
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     NSString * key = [specifier propertyForKey:@"key"];
-    return [[NSDictionary alloc] initWithContentsOfFile:@WIFI_PLIST_PATH][key] ?:[specifier properties][@"default"];
+    return [[NSDictionary alloc] initWithContentsOfFile:@(WIFI_PLIST_PATH)][key] ?:[specifier properties][@"default"];
 }
 
 - (void)realSetPreferenceValue:(NSString*)name value:(id)value
 {
     NSMutableDictionary * settings =
         [  [NSMutableDictionary alloc]
-            initWithContentsOfFile:@WIFI_PLIST_PATH
+            initWithContentsOfFile:@(WIFI_PLIST_PATH)
         ] ?:[NSMutableDictionary new];
     [settings
         setObject:value
@@ -362,7 +355,7 @@ NSDictionary * _networksDict;
 
         NSDictionary * bluetoothList =
             [   [NSDictionary alloc]
-                initWithContentsOfFile:@BT_PLIST_PATH
+                initWithContentsOfFile:@(WIFI_PLIST_PATH)
             ] ?: [NSDictionary new];
 
         BluetoothManager *  bluetoothManager    = [BluetoothManager sharedInstance];
@@ -404,7 +397,7 @@ NSDictionary * _networksDict;
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     NSString * key = [specifier propertyForKey:@"key"];
-    return [[NSDictionary alloc] initWithContentsOfFile:@BT_PLIST_PATH][key]
+    return [[NSDictionary alloc] initWithContentsOfFile:@(WIFI_PLIST_PATH)][key]
         ?:[specifier properties][@"default"];
 }
 
@@ -412,13 +405,13 @@ NSDictionary * _networksDict;
 {
     NSMutableDictionary * settings =
         [  [NSMutableDictionary alloc]
-            initWithContentsOfFile:@BT_PLIST_PATH
+            initWithContentsOfFile:@(WIFI_PLIST_PATH)
         ] ?:[NSMutableDictionary new];
     [settings
         setObject:value
         forKey:SHA1([specifier propertyForKey:@"key"])
     ];
-    [settings writeToFile:@BT_PLIST_PATH atomically:YES];
+    [settings writeToFile:@(WIFI_PLIST_PATH) atomically:YES];
     [settings release];
     notify_post("com.giorgioiavicoli.passby/bt");
 }
@@ -455,7 +448,7 @@ NSDictionary * _networksDict;
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     return  (   [   [[NSDictionary alloc]
-                    initWithContentsOfFile:@PLIST_PATH
+                    initWithContentsOfFile:@(PLIST_PATH)
                     ] retain
                 ] [[specifier propertyForKey:@"key"]]
             ) ?:[specifier properties][@"default"];
@@ -465,7 +458,7 @@ NSDictionary * _networksDict;
 {
     NSMutableDictionary * settings =
         [   [NSMutableDictionary alloc]
-            initWithContentsOfFile:@PLIST_PATH
+            initWithContentsOfFile:@(PLIST_PATH)
         ] ?:[NSMutableDictionary new];
 
     [settings

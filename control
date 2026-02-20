@@ -3,7 +3,7 @@ Name: PassBy
 Depends: mobilesubstrate, preferenceloader
 Version: 1.9.1
 Architecture: iphoneos-arm
-Description: Bypass passcode in many ways
+Description: Bypass passcode in many ways, support rootless & roothide Dopamine jailbreak on 16+
 Maintainer: Giorgio Iavicoli
 Author: Giorgio Iavicoli
 Section: Tweaks

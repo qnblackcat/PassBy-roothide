@@ -5,8 +5,8 @@
 #import <dlfcn.h>
 #import <notify.h>
 #import <objc/runtime.h>
-
 #include "crypto.h"
+#include <roothide.h>
 
 
 static BOOL isTweakEnabled;
@@ -75,10 +75,10 @@ static NSObject *   WiFiGracePeriodSyncObj;
 static NSObject *   BTGracePeriodSyncObj;
 static NSObject *   ManuallyDisabledSyncObj;
 
-#define PLIST_PATH      "/var/mobile/Library/Preferences/com.giorgioiavicoli.passby.plist"
-#define WIFI_PLIST_PATH "/var/mobile/Library/Preferences/com.giorgioiavicoli.passbynets.plist"
-#define BT_PLIST_PATH   "/var/mobile/Library/Preferences/com.giorgioiavicoli.passbybt.plist"
-#define GP_PLIST_PATH   "/var/mobile/Library/Preferences/com.giorgioiavicoli.passbygp.plist"
+#define PLIST_PATH      jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passby.plist")
+#define WIFI_PLIST_PATH jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passbynets.plist")
+#define BT_PLIST_PATH   jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passbybt.plist")
+#define GP_PLIST_PATH   jbroot("/var/mobile/Library/Preferences/com.giorgioiavicoli.passbygp.plist")
 
 #if DEBUG
 #   define PBLog(...) NSLog(@"*g* %s:%d: %@", __FILE__, __LINE__, [NSString stringWithFormat:__VA_ARGS__])
@@ -101,7 +101,7 @@ static void savePasscodeToFile()
 {
     NSMutableDictionary * passByDict =
         [   [NSMutableDictionary alloc]
-            initWithContentsOfFile:@PLIST_PATH
+            initWithContentsOfFile:@(PLIST_PATH)
         ]?: [NSMutableDictionary new];
 
     NSData * passcodeData =
@@ -731,7 +731,7 @@ static void passBySettingsChanged(
 {
     NSDictionary * passByDict =
         [   [NSDictionary alloc]
-            initWithContentsOfFile:@PLIST_PATH
+            initWithContentsOfFile:@(PLIST_PATH)
         ]?: [NSDictionary new];
 
     isTweakEnabled          =   [[passByDict valueForKey:@"isEnabled"]              ?:@NO   boolValue];
@@ -835,7 +835,7 @@ static void passByWiFiListChanged(
 {
     NSDictionary * WiFiListDict =
         [   [NSDictionary alloc]
-            initWithContentsOfFile:@WIFI_PLIST_PATH
+            initWithContentsOfFile:@(WIFI_PLIST_PATH)
         ]?: [NSDictionary new];
 
     NSMutableArray * WiFiListArr =
@@ -859,7 +859,7 @@ static void passByBTListChanged(
 {
     NSDictionary * BTListDict =
         [   [NSDictionary alloc]
-            initWithContentsOfFile:@BT_PLIST_PATH
+            initWithContentsOfFile:@(BT_PLIST_PATH)
         ]?: [NSDictionary new];
 
     NSMutableArray * BTListArr =
