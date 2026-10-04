@@ -14,6 +14,8 @@ Auto-unlock can be enabled under these conditions:
 - Connected to Apple Watch
 - Wired Headphones plugged in
 
+An experimental guest passcode can be set for lending the phone: it unlocks normally, re-locks after a timeout and keeps auto-unlock disabled until the owner unlocks again.
+
 It can be chosen whether to enable the bypass upon connection or after the first normal unlock in presence of the condition.
 
 ## Security

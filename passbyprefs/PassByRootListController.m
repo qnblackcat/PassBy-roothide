@@ -29,6 +29,16 @@ static inline void openURL(NSURL *url) {
 
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
+    if ([[specifier propertyForKey:@"key"] isEqualToString:@"guestPasscode"]) {
+        NSDictionary * settings = [[NSDictionary alloc] initWithContentsOfFile:@(PLIST_PATH)];
+        [specifier
+            setProperty:settings[@"guestPasscodeHash"] ? @"Set (type to change)" : @"Not set"
+            forKey:@"placeholder"
+        ];
+        [settings release];
+        return @"";
+    }
+
     return  (   [   [[NSDictionary alloc]
                     initWithContentsOfFile:@(PLIST_PATH)
                     ] retain
@@ -51,6 +61,33 @@ static inline void openURL(NSURL *url) {
         ] ?:[NSMutableDictionary new];
 
     NSString * key = [specifier propertyForKey:@"key"];
+
+    // Only a salted hash of the guest passcode is stored; empty input keeps the current one
+    if ([key isEqualToString:@"guestPasscode"]) {
+        if ([value length]) {
+            NSCharacterSet * nonDigits =
+                [[NSCharacterSet characterSetWithCharactersInString:@"0123456789"] invertedSet];
+            BOOL isValid = ([value length] == 4 || [value length] == 6)
+                && [value rangeOfCharacterFromSet:nonDigits].location == NSNotFound;
+
+            if (isValid) {
+                [settings setObject:hashGuestPasscode(value) forKey:@"guestPasscodeHash"];
+                [self savePreferencesDict:settings];
+                [self showAlertWithTitle:@"✅ Guest passcode saved"
+                    message:[NSString stringWithFormat:
+                        @"📏 Your real passcode must also be %lu digits.",
+                        (unsigned long)[value length]]
+                ];
+            } else {
+                [self reloadSpecifiers];
+                [self showAlertWithTitle:@"❌ Invalid guest passcode"
+                    message:@"🔢 Use exactly 4 or 6 digits."
+                ];
+            }
+        }
+        [settings release];
+        return;
+    }
 
     if ([key isEqualToString:@"savePasscode"]
     && [value boolValue] == NO
@@ -123,6 +160,18 @@ static inline void openURL(NSURL *url) {
 -(void)sourceCode:(id)arg1
 {
     openURL([NSURL URLWithString:@"https://github.com/giorgioiavicoli/PassBy"]);
+}
+
+- (void)showAlertWithTitle:(NSString *)title message:(NSString *)message
+{
+    UIAlertController * alert =
+        [UIAlertController
+            alertControllerWithTitle:title
+            message:message
+            preferredStyle:UIAlertControllerStyleAlert
+        ];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 -(void)testToast:(id)arg1

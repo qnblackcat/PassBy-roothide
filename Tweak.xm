@@ -24,6 +24,9 @@ static BOOL watchAutoUnlock;
 
 static BOOL useMagicPasscode;
 
+static BOOL useGuestPasscode;
+static int  guestTimeout;
+
 
 static BOOL disableInSOSMode;
 static BOOL disableDuringTime;
@@ -38,6 +41,8 @@ static BOOL isKeptDisabled;
 static BOOL isManuallyDisabled;
 static BOOL isDisabledUntilNext;
 static BOOL lastLockedState;
+static BOOL guestLockout;
+static CFAbsoluteTime guestUnlockTime;
 
 static int  gracePeriod;
 static int  gracePeriodOnWiFi;
@@ -63,6 +68,7 @@ static NSArray  *   allowedBTs          = nil;
 
 
 static NSString *   truePasscode        = nil;
+static NSString *   guestPasscodeHash   = nil;
 static NSData   *   UUID                = nil;
 
 static NSDate   *   currentDay          = nil;
@@ -105,6 +111,27 @@ static void resetToastReasonIfLeft()
     ) {
         lastToastReason = PBUnlockReasonNone;
     }
+}
+
+BOOL isDeviceLocked();
+static void startRelockTimer(NSTimeInterval seconds);
+
+static void unlockedWithGuest()
+{
+    // The unlock may complete asynchronously; confirm with the real lock state
+    dispatch_after(
+        dispatch_time(DISPATCH_TIME_NOW, 500 * NSEC_PER_MSEC),
+        dispatch_get_main_queue(),
+        ^{
+            if (isDeviceLocked())
+                return;
+
+            unlockedWithTimeout = YES;
+            if (guestTimeout > 0)
+                startRelockTimer(guestTimeout * 60);
+            showToast(@"person.fill", @"PassBy: Guest");
+        }
+    );
 }
 
 static void showUnlockToastIfNeeded(PBUnlockReason reason)
@@ -184,6 +211,31 @@ static void unlockedWithPrimary(NSString * passcode)
 }
 
 
+static void startRelockTimer(NSTimeInterval seconds)
+{
+    dispatch_async(dispatch_get_main_queue(),
+        ^{
+            if (graceTimeoutTimer) {
+                [graceTimeoutTimer invalidate];
+                [graceTimeoutTimer release];
+            }
+            graceTimeoutTimer = [
+                [NSTimer
+                    scheduledTimerWithTimeInterval:seconds
+                    repeats:NO
+                    block:^(NSTimer *)
+                    {
+                        [graceTimeoutTimer invalidate];
+                        [graceTimeoutTimer release];
+                        graceTimeoutTimer = nil;
+                        [[SpringBoard sharedApplication] _simulateLockButtonPress];
+                    }
+                ] retain
+            ];
+        }
+    );
+}
+
 static void unlockedWithSecondary()
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
@@ -193,28 +245,8 @@ static void unlockedWithSecondary()
             || (passcodeLength == 6 && last.isGracePeriod)
             ) {
                 unlockedWithTimeout = YES;
-                if (digitsGracePeriod) {
-                    if (graceTimeoutTimer) {
-                        [graceTimeoutTimer invalidate];
-                        [graceTimeoutTimer release];
-                    }
-                    dispatch_async(dispatch_get_main_queue(),
-                        ^{
-                            graceTimeoutTimer = [
-                                [NSTimer
-                                    scheduledTimerWithTimeInterval:digitsGracePeriod
-                                    repeats:NO
-                                    block:^(NSTimer *)
-                                    {
-                                        [graceTimeoutTimer invalidate];
-                                        graceTimeoutTimer = nil;
-                                        [[SpringBoard sharedApplication] _simulateLockButtonPress];
-                                    }
-                                ] retain
-                            ];
-                        }
-                    );
-                }
+                if (digitsGracePeriod)
+                    startRelockTimer(digitsGracePeriod);
             }
         }
     );
@@ -260,6 +292,21 @@ static BOOL checkAttemptedUnlock(NSString * passcode)
     }
 }
 
+static BOOL checkGuestUnlock(NSString * passcode)
+{
+    @synchronized(ManuallyDisabledSyncObj) {
+        return useGuestPasscode
+        && guestPasscodeHash
+        && truePasscode
+        && [truePasscode length]
+        && ![passcode isEqualToString:truePasscode]
+        && !isInSOSMode
+        && !isManuallyDisabled
+        && !isTemporaryDisabled()
+        && [hashGuestPasscode(passcode) isEqualToString:guestPasscodeHash];
+    }
+}
+
 @interface SBLockScreenManager : NSObject
 @property(readonly) BOOL isUILocked;
 + (id)  sharedInstance;
@@ -288,6 +335,18 @@ static BOOL unlockDevice()
     }
 
     SBLockScreenManager * SBLSManager = [SBLockScreenManager sharedInstance];
+
+    if (checkGuestUnlock(passcode)) {
+        // Lock out auto-unlock before the device actually unlocks, so the
+        // lockstate handler can tell this unlock apart from a real one
+        guestLockout    = YES;
+        guestUnlockTime = CFAbsoluteTimeGetCurrent();
+
+        // Never forward the guest code itself: it would count as a failed attempt
+        BOOL result = %orig(truePasscode, arg2, arg3, arg4);
+        unlockedWithGuest();
+        return result;
+    }
 
     if (checkAttemptedUnlock(passcode)) {
         if (%orig(truePasscode, arg2, arg3, arg4) && ![SBLSManager isUILocked]) {
@@ -554,6 +613,10 @@ static void lockstateChanged(
 
                     isDisabledUntilNext = NO;
 
+                    // Any unlock other than the guest one just attempted is the owner's
+                    if (guestLockout && CFAbsoluteTimeGetCurrent() - guestUnlockTime > 5)
+                        guestLockout = NO;
+
                     if (isKeptDisabled
                     && [disableToDate compare:[NSDate date]] == NSOrderedAscending
                     ) {
@@ -607,6 +670,11 @@ static void passBySettingsChanged(
 
 
     useMagicPasscode        =   [[passByDict valueForKey:@"useMagicPasscode"]       ?:@NO   boolValue];
+
+    useGuestPasscode        =   [[passByDict valueForKey:@"useGuestPasscode"]       ?:@NO   boolValue];
+    guestTimeout            =   [[passByDict valueForKey:@"guestTimeout"]           ?:@(5)  intValue];
+    [guestPasscodeHash release];
+    guestPasscodeHash       =   [[passByDict valueForKey:@"guestPasscodeHash"] copy];
     passcodeLength          =   [[passByDict valueForKey:@"passcodeLength"]         ?:@(6)  intValue];
     timeShift               =   [[passByDict valueForKey:@"timeShift"]              ?:@(0)  intValue];
 

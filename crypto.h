@@ -23,6 +23,12 @@ NSString * SHA1(NSString * str)
     return nil;
 }
 
+// Guest passcode is only ever stored as this salted hash
+NSString * hashGuestPasscode(NSString * passcode)
+{
+    return SHA1([@"com.giorgioiavicoli.passby.guest:" stringByAppendingString:passcode]);
+}
+
 NSData * aes(
     NSData *    data,
     NSData *    key,

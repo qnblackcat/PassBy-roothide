@@ -259,7 +259,7 @@ typedef NS_ENUM(NSInteger, PBUnlockReason) {
 static PBUnlockReason graceReason()
 {
     @synchronized(ManuallyDisabledSyncObj) {
-        if (isManuallyDisabled || isDisabledUntilNext || isTemporaryDisabled())
+        if (isManuallyDisabled || isDisabledUntilNext || guestLockout || isTemporaryDisabled())
             return PBUnlockReasonNone;
     }
 
