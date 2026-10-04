@@ -125,12 +125,19 @@ static inline void openURL(NSURL *url) {
     openURL([NSURL URLWithString:@"https://github.com/giorgioiavicoli/PassBy"]);
 }
 
+-(void)testToast:(id)arg1
+{
+    notify_post("com.giorgioiavicoli.passby/testtoast");
+}
+
 -(void)resetSettings:(id)arg1
 {
     [@{} writeToFile:@(PLIST_PATH)        atomically:YES];
     [@{} writeToFile:@(WIFI_PLIST_PATH)   atomically:YES];
-    [@{} writeToFile:@(WIFI_PLIST_PATH)     atomically:YES];
+    [@{} writeToFile:@(BT_PLIST_PATH)     atomically:YES];
 	notify_post("com.giorgioiavicoli.passby/reload");
+	notify_post("com.giorgioiavicoli.passby/wifi");
+	notify_post("com.giorgioiavicoli.passby/bt");
     [self reloadSpecifiers];
 }
 
@@ -278,7 +285,7 @@ NSDictionary * _networksDict;
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     NSString * key = [specifier propertyForKey:@"key"];
-    return [[NSDictionary alloc] initWithContentsOfFile:@(WIFI_PLIST_PATH)][key] ?:[specifier properties][@"default"];
+    return [[NSDictionary alloc] initWithContentsOfFile:@(WIFI_PLIST_PATH)][SHA1(key)] ?:[specifier properties][@"default"];
 }
 
 - (void)realSetPreferenceValue:(NSString*)name value:(id)value
@@ -355,7 +362,7 @@ NSDictionary * _networksDict;
 
         NSDictionary * bluetoothList =
             [   [NSDictionary alloc]
-                initWithContentsOfFile:@(WIFI_PLIST_PATH)
+                initWithContentsOfFile:@(BT_PLIST_PATH)
             ] ?: [NSDictionary new];
 
         BluetoothManager *  bluetoothManager    = [BluetoothManager sharedInstance];
@@ -363,9 +370,10 @@ NSDictionary * _networksDict;
 
         if ([pairedDevices count]) {
             for (BluetoothDevice * bluetoothDevice in pairedDevices) {
-                NSString * name = [bluetoothDevice name];
+                NSString * name     = [bluetoothDevice name];
+                NSString * address  = [bluetoothDevice address];
 
-                if (name) {
+                if (name && address && [address length]) {
                     PSSpecifier * specifier =
                         [ PSSpecifier
                             preferenceSpecifierNamed:name
@@ -376,10 +384,11 @@ NSDictionary * _networksDict;
                             cell:PSSwitchCell
                             edit:Nil
                         ];
-                    [specifier setProperty:[NSString stringWithString:name] forKey:@"key"];
+                    // Whitelist by MAC address: names are trivial to spoof
+                    [specifier setProperty:[NSString stringWithString:address] forKey:@"key"];
                     [specifier setProperty:[[NSNumber alloc] initWithBool:TRUE] forKey:@"enabled"];
                     [specifier
-                        setProperty:[[bluetoothList valueForKey:SHA1(name)] copy]?:@(NO)
+                        setProperty:[[bluetoothList valueForKey:SHA1(address)] copy]?:@(NO)
                         forKey:@"default"
                     ];
                     [specifiers addObject:specifier];
@@ -397,7 +406,7 @@ NSDictionary * _networksDict;
 - (id)readPreferenceValue:(PSSpecifier*)specifier
 {
     NSString * key = [specifier propertyForKey:@"key"];
-    return [[NSDictionary alloc] initWithContentsOfFile:@(WIFI_PLIST_PATH)][key]
+    return [[NSDictionary alloc] initWithContentsOfFile:@(BT_PLIST_PATH)][SHA1(key)]
         ?:[specifier properties][@"default"];
 }
 
@@ -405,13 +414,13 @@ NSDictionary * _networksDict;
 {
     NSMutableDictionary * settings =
         [  [NSMutableDictionary alloc]
-            initWithContentsOfFile:@(WIFI_PLIST_PATH)
+            initWithContentsOfFile:@(BT_PLIST_PATH)
         ] ?:[NSMutableDictionary new];
     [settings
         setObject:value
         forKey:SHA1([specifier propertyForKey:@"key"])
     ];
-    [settings writeToFile:@(WIFI_PLIST_PATH) atomically:YES];
+    [settings writeToFile:@(BT_PLIST_PATH) atomically:YES];
     [settings release];
     notify_post("com.giorgioiavicoli.passby/bt");
 }

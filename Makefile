@@ -1,7 +1,8 @@
-# Target iOS 9+ Devices; use the iOS 13.3 SDK
-TARGET = iphone:clang:16.5:16.0
+# Target iOS 15+ Devices; use the iOS 16.5 SDK
+TARGET = iphone:clang:16.5:15.0
 export ARCHS = arm64 arm64e
 
+# THEOS_DEVICE_IP = 192.168.1.15
 INSTALL_TARGET_PROCESSES = SpringBoard
 
 FINALPACKAGE = 1

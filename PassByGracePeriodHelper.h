@@ -247,26 +247,31 @@ static BOOL isTemporaryDisabled()
     return NO;
 }
 
-static BOOL isInGrace()
+typedef NS_ENUM(NSInteger, PBUnlockReason) {
+    PBUnlockReasonNone = 0,
+    PBUnlockReasonWatch,
+    PBUnlockReasonTime,
+    PBUnlockReasonWiFi,
+    PBUnlockReasonBT,
+    PBUnlockReasonHeadphones,
+};
+
+static PBUnlockReason graceReason()
 {
     @synchronized(ManuallyDisabledSyncObj) {
         if (isManuallyDisabled || isDisabledUntilNext || isTemporaryDisabled())
-            return NO;
+            return PBUnlockReasonNone;
     }
 
     if (watchAutoUnlock && isUsingWatch())
-        return YES;
-
-    if (gracePeriodEnds
-    && [gracePeriodEnds compare:[NSDate date]] == NSOrderedDescending)
-        return YES;
+        return PBUnlockReasonWatch;
 
     @synchronized(WiFiGracePeriodSyncObj) {
         if (gracePeriodWiFiEnds
         && [gracePeriodWiFiEnds compare:[NSDate date]] == NSOrderedDescending
         && isUsingWiFi()
         ) {
-            return YES;
+            return PBUnlockReasonWiFi;
         } else {
             [gracePeriodWiFiEnds release];
             gracePeriodWiFiEnds = nil;
@@ -278,18 +283,21 @@ static BOOL isInGrace()
         && [gracePeriodBTEnds compare:[NSDate date]] == NSOrderedDescending
         && isUsingBT()
         ) {
-            return YES;
+            return PBUnlockReasonBT;
         } else {
             [gracePeriodBTEnds release];
             gracePeriodBTEnds = nil;
         }
     }
 
-    if (headphonesAutoUnlock) {
-        return (wasUsingHeadphones && isUsingHeadphones());
-    }
+    if (gracePeriodEnds
+    && [gracePeriodEnds compare:[NSDate date]] == NSOrderedDescending)
+        return PBUnlockReasonTime;
 
-    return NO;
+    if (headphonesAutoUnlock && wasUsingHeadphones && isUsingHeadphones())
+        return PBUnlockReasonHeadphones;
+
+    return PBUnlockReasonNone;
 }
 
 

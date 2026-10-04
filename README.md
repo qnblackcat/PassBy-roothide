@@ -1,4 +1,4 @@
-# PassBy (iOS 9 through 14)
+# PassBy (iOS 15+, rootless & roothide)
 
 This is a highly customizable iOS Tweak that lets you avoid being asked for passcode when certain conditions are verified.
 
@@ -10,14 +10,11 @@ Auto-unlock can be enabled under these conditions:
 
 - Within a timeframe since last time the device was locked
 - Connected to specific WiFi networks
-- Connected to specific Bluetooth devices
+- Connected to specific Bluetooth devices (matched by MAC address)
 - Connected to Apple Watch
 - Wired Headphones plugged in
-- Triggered by Activator Event
 
 It can be chosen whether to enable the bypass upon connection or after the first normal unlock in presence of the condition.
-
-The tweak also allows to automatically dismiss the LockScreen CoverSheet when no notification or media controls are showing.
 
 ## Security
 

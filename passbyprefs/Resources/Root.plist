@@ -90,39 +90,29 @@
 			<key>defaults</key>
 			<string>com.giorgioiavicoli.passby</string>
 			<key>key</key>
+			<string>showUnlockToast</string>
+			<key>label</key>
+			<string>Show toast when unlocked by WiFi/BT</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>action</key>
+			<string>testToast:</string>
+			<key>label</key>
+			<string>Test toast</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.giorgioiavicoli.passby</string>
+			<key>key</key>
 			<string>use24hFormat</string>
 			<key>label</key>
 			<string>Use 24h format</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Activator – activation methods</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkCell</string>
-			<key>label</key>
-			<string>Unlock and dismiss lockscreen</string>
-			<key>isController</key>
-			<true/>
-			<key>bundle</key>
-			<string>LibActivator</string>
-			<key>activatorListener</key>
-			<string>com.giorgioiavicoli.passby.unlock</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkCell</string>
-			<key>label</key>
-			<string>Disable until next real unlock</string>
-			<key>isController</key>
-			<true/>
-			<key>bundle</key>
-			<string>LibActivator</string>
-			<key>activatorListener</key>
-			<string>com.giorgioiavicoli.passby.invalidate</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -361,30 +351,6 @@
 			<string>watchAutoUnlock</string>
 			<key>label</key>
 			<string>Auto-unlock while Watch is reachable</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>com.giorgioiavicoli.passby</string>
-			<key>key</key>
-			<string>dismissLS</string>
-			<key>label</key>
-			<string>Dismiss lockscreen if no notifications</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>com.giorgioiavicoli.passby</string>
-			<key>key</key>
-			<string>dismissLSWithMedia</string>
-			<key>label</key>
-			<string>Even when showing media controls</string>
 		</dict>
 		<dict>
 			<key>cell</key>
