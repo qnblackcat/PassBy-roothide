@@ -1,9 +1,9 @@
 Package: com.giorgioiavicoli.passby
 Name: PassBy
 Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
-Version: 1.9.3
+Version: 1.9.4
 Architecture: iphoneos-arm
 Description: Bypass passcode in many ways, supports rootless & roothide jailbreaks on iOS 15+
-Maintainer: Giorgio Iavicoli
+Maintainer: Giorgio Iavicoli & Qn
 Author: Giorgio Iavicoli
 Section: Tweaks

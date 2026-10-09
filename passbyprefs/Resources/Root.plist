@@ -92,7 +92,7 @@
 			<key>key</key>
 			<string>showUnlockToast</string>
 			<key>label</key>
-			<string>Show toast when unlocked by WiFi/BT</string>
+			<string>Show unlock toast</string>
 		</dict>
 		<dict>
 			<key>cell</key>

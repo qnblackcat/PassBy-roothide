@@ -252,6 +252,23 @@ static void unlockedWithSecondary()
     );
 }
 
+static void unlockedWithMagic()
+{
+    // The unlock may complete asynchronously; confirm with the real lock state
+    dispatch_after(
+        dispatch_time(DISPATCH_TIME_NOW, 500 * NSEC_PER_MSEC),
+        dispatch_get_main_queue(),
+        ^{
+            if (isDeviceLocked())
+                return;
+
+            unlockedWithSecondary();
+            if (showUnlockToast)
+                showToast(@"wand.and.stars", @"PassBy: Magic passcode");
+        }
+    );
+}
+
 @interface SBLockStateAggregator : NSObject
 + (id)sharedInstance;
 - (unsigned long long)lockState;
@@ -349,10 +366,10 @@ static BOOL unlockDevice()
     }
 
     if (checkAttemptedUnlock(passcode)) {
-        if (%orig(truePasscode, arg2, arg3, arg4) && ![SBLSManager isUILocked]) {
-            unlockedWithSecondary();
-            return YES;
-        }
+        // Never forward the magic code itself: it would count as a failed attempt
+        BOOL result = %orig(truePasscode, arg2, arg3, arg4);
+        unlockedWithMagic();
+        return result;
     }
 
     if (%orig && ![SBLSManager isUILocked]) {

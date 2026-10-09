@@ -50,7 +50,7 @@
 			<key>footerAlignment</key>
 			<integer>0</integer>
 			<key>footerText</key>
-			<string>Shows a small "PassBy: Trusted WiFi / Bluetooth" pill the first time you are auto-unlocked on a trusted network or device. Tap "Test toast" to preview it.</string>
+			<string>Shows a small pill when PassBy unlocks for you: "Trusted WiFi / Bluetooth" the first time you're auto-unlocked on a trusted network or device, and "Magic passcode" every time you unlock with it. Tap "Test toast" to preview it.</string>
 			<key>label</key>
 			<string>💬 Unlock toast</string>
 		</dict>
